@@ -124,6 +124,21 @@ The plugin defaults to this reading logic:
 - Retrospectives: read only 1-3 matched history blocks.
 - Never expand the whole session summary unless explicitly requested.
 
+## Token and cache impact
+
+For a session summary around 18,000 characters, reading the full file may cost roughly 9k-16k tokens. With this plugin, the default startup read is usually around 1k-2k tokens; adding 1-3 keyword-matched history blocks is usually around 2k-4k tokens.
+
+| Scenario | Read content | Estimated tokens | Compared with full read |
+| --- | --- | --- | --- |
+| No memory read | No long-term memory | 0 | Cheapest, but no memory benefit |
+| Default plugin read | Startup rules, reading strategy, indexes, fixed paths | About 1k-2k | Saves about 80%-90% |
+| Plugin + keyword search | Default read + 1-3 relevant history blocks | About 2k-4k | Saves about 65%-85% |
+| Full session summary read | Entire memory file | About 9k-16k | Baseline |
+
+Cache-wise, the default startup sections are stable and are more likely to be reused. Keyword matches vary by task, so their cache hit rate is more moderate. Full reads contain stable parts too, but ongoing log appends and larger payloads can reduce practical cache benefit.
+
+In short: this is not meant to compete with reading no memory at all. It reduces the cost of long-term memory from tens of thousands of tokens to a few thousand while preserving useful context.
+
 ## How installation works
 
 The install scripts:
