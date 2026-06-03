@@ -12,8 +12,9 @@
 
 - 从你的 Obsidian vault 读取 `Codex/Codex 会话总结.md`。
 - 从会话总结生成 `Codex/project-summary.md` 项目摘要。
+- 从会话总结生成 `Codex/memory/` 下的分类记忆文件。
 - 初始化时可自动创建一份通用“启动必读”记忆模板。
-- 默认优先读取项目摘要，再读取启动规则、读取策略、检索索引和固定路径，避免每次展开完整历史。
+- 默认优先读取项目摘要；带关键词时可读取匹配分类，再读取启动规则、读取策略、检索索引和固定路径，避免每次展开完整历史。
 - 支持按关键词检索 1-3 条相关历史日志，适合节省 token。
 - 追加简洁的 Codex 会话总结。
 - 支持通过 `OBSIDIAN_VAULT` 或本地配置指定任意 vault 路径。
@@ -75,6 +76,12 @@ python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py read
 python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py project-summary
 ```
 
+生成或刷新分类记忆：
+
+```bash
+python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py memory-categories
+```
+
 按关键词读取相关历史，默认最多 3 条：
 
 ```bash
@@ -119,6 +126,20 @@ Codex/Codex 会话总结.md
 Codex/project-summary.md
 ```
 
+默认分类记忆目录是：
+
+```text
+Codex/memory/
+```
+
+包含：
+
+- `Project.md`
+- `Decision.md`
+- `Todo.md`
+- `Bug.md`
+- `User-Preference.md`
+
 也就是 vault 里的这个文件：
 
 ```text
@@ -147,6 +168,7 @@ python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py init --vault 
 插件默认遵循这套读取逻辑：
 
 - 普通任务：优先读取 `Codex/project-summary.md`，再读“启动必读”和用户当前消息。
+- 分类任务：按关键词读取 `Codex/memory/` 中的匹配分类。
 - Obsidian/GitHub/同步任务：再检索 `obsidian`、`sync`、`git/github`、`github-sync` 等关键词。
 - 插件/记忆任务：再检索 `codex/plugin`、`codex/memory`、`obsidian-codex-memory` 等关键词。
 - 旧问题复盘：只读取命中的 1-3 个历史日志块。
@@ -185,6 +207,11 @@ python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py init --vault 
 
 - `Codex/Codex 会话总结.md`
 - `Codex/project-summary.md`
+- `Codex/memory/Project.md`
+- `Codex/memory/Decision.md`
+- `Codex/memory/Todo.md`
+- `Codex/memory/Bug.md`
+- `Codex/memory/User-Preference.md`
 - `Codex/MACOS_CODEX_OBSIDIAN_MEMORY.md`
 
 插件只面向 Codex 记忆文件，不负责管理整个 Obsidian vault。你的 vault 必须已经是 Git 仓库，并且配置好了 `origin`。

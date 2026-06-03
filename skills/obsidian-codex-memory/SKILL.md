@@ -43,6 +43,12 @@ Refresh the project summary after substantial project-memory changes:
 python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py project-summary
 ```
 
+Refresh categorized memory files after substantial memory changes:
+
+```bash
+python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py memory-categories
+```
+
 For Obsidian, GitHub, sync, plugin, memory, or retrospective tasks, pass task keywords and read only 1-3 matching history blocks:
 
 ```bash
@@ -74,6 +80,7 @@ python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py sync-github
 - Do not record API keys, passwords, tokens, or private credentials.
 - Do not dump the entire memory note unless the user asks for full memory.
 - Prefer `Codex/project-summary.md` for project orientation before reading detailed history.
+- Use `Codex/memory/Project.md`, `Decision.md`, `Todo.md`, `Bug.md`, and `User-Preference.md` for precise category reads when relevant.
 - For ordinary tasks, use startup memory only. For specialized tasks, query matching history blocks by keywords.
 - Complete the user's task before writing a memory summary.
 - Keep new summaries within 5 lines when possible.

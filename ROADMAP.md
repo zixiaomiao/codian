@@ -31,7 +31,13 @@ python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py project-summa
 
 ## 第二阶段：Memory 分类体系
 
-将记忆按照不同类别管理，而不是把所有内容堆在一个文件中。
+Memory 分类体系将记忆按照不同类别管理，而不是把所有内容堆在一个文件中。当前版本已加入基础命令：
+
+```bash
+python3 ~/plugins/obsidian-codex-memory/scripts/obsidian_memory.py memory-categories
+```
+
+它会从 `Codex/Codex 会话总结.md` 生成 `Codex/memory/` 下的分类文件。
 
 建议分类：
 

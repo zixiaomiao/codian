@@ -14,6 +14,13 @@ from typing import List, Optional
 APP_NAME = "obsidian-codex-memory"
 DEFAULT_MEMORY_REL = Path("Codex/Codex 会话总结.md")
 DEFAULT_PROJECT_SUMMARY_REL = Path("Codex/project-summary.md")
+MEMORY_CATEGORY_RELS = {
+    "Project": Path("Codex/memory/Project.md"),
+    "Decision": Path("Codex/memory/Decision.md"),
+    "Todo": Path("Codex/memory/Todo.md"),
+    "Bug": Path("Codex/memory/Bug.md"),
+    "User Preference": Path("Codex/memory/User-Preference.md"),
+}
 DEFAULT_EXTRA_MEMORY_REL = Path("Codex/MACOS_CODEX_OBSIDIAN_MEMORY.md")
 STARTUP_HEADING = "## 启动必读"
 LOGS_HEADING = "## 会话日志"
@@ -21,6 +28,7 @@ ALLOWED_OVERWRITE = {
     DEFAULT_MEMORY_REL.as_posix(),
     DEFAULT_PROJECT_SUMMARY_REL.as_posix(),
     DEFAULT_EXTRA_MEMORY_REL.as_posix(),
+    *(rel.as_posix() for rel in MEMORY_CATEGORY_RELS.values()),
 }
 
 
@@ -122,6 +130,20 @@ def project_summary_path() -> Path:
     return vault_path() / project_summary_rel()
 
 
+def memory_category_rels() -> dict:
+    configured = load_config().get("memory_category_rels", {})
+    rels = dict(MEMORY_CATEGORY_RELS)
+    if isinstance(configured, dict):
+        for name, rel in configured.items():
+            rels[name] = Path(rel)
+    return rels
+
+
+def category_paths() -> dict:
+    vault = vault_path()
+    return {name: vault / rel for name, rel in memory_category_rels().items()}
+
+
 def run(cmd: list, cwd: Optional[Path] = None, check: bool = True) -> subprocess.CompletedProcess:
     result = subprocess.run(cmd, cwd=cwd, text=True, capture_output=True)
     if check and result.returncode != 0:
@@ -174,6 +196,7 @@ def default_memory_template(vault: Path, rel: Path) -> str:
 - 当前系统：`{current_system_name()}`
 - 当前 Obsidian vault：`{vault}`
 - 项目摘要相对路径：`{DEFAULT_PROJECT_SUMMARY_REL.as_posix()}`
+- 记忆分类目录：`Codex/memory/`
 - 主会话总结相对路径：`{rel.as_posix()}`
 - GitHub 仓库：未配置；如果 vault 是 Git 仓库，使用 `git remote -v` 确认远程和分支。
 - 用户偏好：先完成任务，再写 Obsidian 总结；回答尽量直接、少废话。
@@ -186,6 +209,7 @@ def default_memory_template(vault: Path, rel: Path) -> str:
 
 - 普通任务：只读“启动必读”和用户当前消息。
 - 项目任务：优先读取 `Codex/project-summary.md`。
+- 分类读取：按任务类型读取 `Codex/memory/Project.md`、`Decision.md`、`Todo.md`、`Bug.md`、`User-Preference.md`。
 - Obsidian/GitHub/同步任务：再检索 `obsidian`、`sync`、`git/github`、`github-sync`、`vault-structure`。
 - 插件/记忆任务：再检索 `codex/plugin`、`codex/memory`、`obsidian-codex-memory`。
 - 旧问题复盘：只读取命中的 1-3 个历史日志块。
@@ -209,6 +233,7 @@ def default_memory_template(vault: Path, rel: Path) -> str:
 
 - 当前 Obsidian vault：`{vault}`
 - 当前项目摘要：`{vault / DEFAULT_PROJECT_SUMMARY_REL}`
+- 当前记忆分类目录：`{vault / "Codex/memory"}`
 - 当前主会话总结：`{vault / rel}`
 - 当前 Codex 记忆插件：自动安装到用户本机插件目录，通常是 `~/plugins/obsidian-codex-memory`。
 
@@ -316,6 +341,95 @@ def detect_terms(text: str, mapping: dict) -> List[str]:
         if any(term.lower() in lower for term in terms):
             found.append(label)
     return found
+
+
+def classify_log(block: str) -> List[str]:
+    payload = (log_keywords(block) + "\n" + " ".join(clean_summary_lines(block))).lower()
+    categories = []
+    if any(term in payload for term in ["bug", "fix", "修复", "错误", "失败", "报错", "兼容", "验证"]):
+        categories.append("Bug")
+    if any(term in payload for term in ["decision", "决定", "选择", "策略", "规则", "默认", "不再", "改为", "优先", "只同步"]):
+        categories.append("Decision")
+    if any(term in payload for term in ["todo", "待办", "roadmap", "规划", "下一阶段", "后续推进"]):
+        categories.append("Todo")
+    if any(term in payload for term in ["preference", "偏好", "用户偏好", "先完成任务", "少废话", "不要"]):
+        categories.append("User Preference")
+    if any(term in payload for term in ["project", "项目", "release", "readme", "插件", "仓库", "安装", "发布", "summary"]):
+        categories.append("Project")
+    return categories or ["Project"]
+
+
+def generate_memory_categories(max_logs: int = 80) -> List[Path]:
+    source_path = memory_path()
+    if not source_path.exists():
+        raise SystemExit(f"Memory note not found: {source_path}")
+
+    text = source_path.read_text(encoding="utf-8")
+    logs = split_logs(text)
+    selected_logs = logs[-max_logs:] if max_logs > 0 else logs
+    buckets = {name: [] for name in MEMORY_CATEGORY_RELS}
+
+    for block in selected_logs:
+        ts = log_timestamp(block)
+        keywords = log_keywords(block)
+        summary_lines = clean_summary_lines(block)
+        summary = compact_line(" ".join(summary_lines), 220) if summary_lines else ""
+        if not summary:
+            continue
+        entry = f"- {ts}：{summary}"
+        if keywords:
+            entry += f"\n  - 关键词：{keywords}"
+        for category in classify_log(block):
+            buckets.setdefault(category, []).append(entry)
+
+    written = []
+    now = now_iso()
+    for name, path in category_paths().items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        items = buckets.get(name, [])
+        body = f"""# {name}
+
+updated: {now}
+source: `{source_path.relative_to(vault_path())}`
+
+## 用途
+
+{category_purpose(name)}
+
+## 条目
+
+{chr(10).join(items[-30:]) if items else "- 暂无条目。"}
+"""
+        path.write_text(body, encoding="utf-8")
+        written.append(path)
+        print(f"Wrote {name} memory to {path}")
+    return written
+
+
+def category_purpose(name: str) -> str:
+    return {
+        "Project": "项目概况、发布记录、安装流程、当前状态和近期变更。",
+        "Decision": "长期有效的技术决策、同步策略、读取策略和范围边界。",
+        "Todo": "后续规划、待办事项和路线图。",
+        "Bug": "错误、失败原因、修复记录、兼容性问题和验证结果。",
+        "User Preference": "用户偏好、固定路径、操作习惯、安全规则和回答风格。",
+    }.get(name, "分类记忆。")
+
+
+def categories_for_query(query: str) -> List[str]:
+    lower = query.lower()
+    matched = []
+    mapping = {
+        "Project": ["project", "项目", "summary", "release", "readme", "发布", "安装"],
+        "Decision": ["decision", "决策", "为什么", "策略", "规则", "选择"],
+        "Todo": ["todo", "待办", "roadmap", "规划", "下一步"],
+        "Bug": ["bug", "修复", "错误", "失败", "报错", "兼容"],
+        "User Preference": ["preference", "偏好", "路径", "安全", "少废话", "用户"],
+    }
+    for name, terms in mapping.items():
+        if any(term in lower for term in terms):
+            matched.append(name)
+    return matched
 
 
 def generate_project_summary(project_name: str = "", output_rel: Optional[str] = None, max_logs: int = 12) -> Path:
@@ -449,7 +563,13 @@ def init(vault: str, memory: Optional[str], create: bool) -> None:
     print(f"Memory note: {memory_path()}")
 
 
-def read_memory(full: bool = False, query: str = "", logs_limit: int = 3, include_project_summary: bool = True) -> None:
+def read_memory(
+    full: bool = False,
+    query: str = "",
+    logs_limit: int = 3,
+    include_project_summary: bool = True,
+    include_categories: bool = True,
+) -> None:
     path = memory_path()
     if not path.exists():
         raise SystemExit(f"Memory note not found: {path}")
@@ -462,6 +582,12 @@ def read_memory(full: bool = False, query: str = "", logs_limit: int = 3, includ
     summary_path = project_summary_path()
     if include_project_summary and summary_path.exists():
         sections.append(summary_path.read_text(encoding="utf-8").strip())
+
+    if include_categories and query:
+        for category in categories_for_query(query):
+            category_path = category_paths().get(category)
+            if category_path and category_path.exists():
+                sections.append(category_path.read_text(encoding="utf-8").strip())
 
     for heading in [STARTUP_HEADING, "## 读取策略", "## 任务检索索引", "## 固定路径索引"]:
         found = section(text, heading)
@@ -565,6 +691,7 @@ def main() -> None:
     read_p.add_argument("--query", default="", help="Optional keywords for retrieving 1-3 matching history blocks.")
     read_p.add_argument("--logs-limit", type=int, default=3, help="Maximum matched history blocks to include.")
     read_p.add_argument("--no-project-summary", action="store_true", help="Do not include Codex/project-summary.md in compact reads.")
+    read_p.add_argument("--no-categories", action="store_true", help="Do not include matching Codex/memory category files.")
 
     append_p = sub.add_parser("append", help="Append a compact memory summary.")
     append_p.add_argument("--summary", required=True)
@@ -581,18 +708,23 @@ def main() -> None:
     summary_p.add_argument("--output-rel", default=None)
     summary_p.add_argument("--max-logs", type=int, default=12)
 
+    categories_p = sub.add_parser("memory-categories", help="Generate categorized memory files under Codex/memory/.")
+    categories_p.add_argument("--max-logs", type=int, default=80)
+
     args = parser.parse_args()
 
     if args.cmd == "init":
         init(args.vault, args.memory_rel, not args.no_create)
     elif args.cmd == "read":
-        read_memory(args.full, args.query, args.logs_limit, not args.no_project_summary)
+        read_memory(args.full, args.query, args.logs_limit, not args.no_project_summary, not args.no_categories)
     elif args.cmd == "append":
         append_summary(args.summary, args.tags, args.source, args.keywords)
     elif args.cmd == "sync-github":
         sync_github(args.dry_run, args.branch)
     elif args.cmd == "project-summary":
         generate_project_summary(args.project_name, args.output_rel, args.max_logs)
+    elif args.cmd == "memory-categories":
+        generate_memory_categories(args.max_logs)
 
 
 if __name__ == "__main__":
