@@ -1,11 +1,9 @@
 ---
 name: codian
-description: Use when the user asks to enable Obsidian memory, read Codex memory, update Codex session summary, or continue with their Obsidian memory. Reads and updates the user's structured Codex memory vault in Obsidian.
+description: Read and update Codex long-term memory stored in Obsidian. Use when the user asks to read Codex memory, update session summary, record something for later ("把这个记住", "以后记住", "记录到 Codex"), continue with memory context, sync Obsidian memory, or enable Obsidian-based memory. Covers vault discovery, compact read with keyword-matched log retrieval, append with tags/source/keywords, project summary generation, and categorized memory (decisions, todos, bugs, preferences). The companion Python script handles vault discovery via environment variable, config file, or auto-scan of common paths.
 ---
 
-# Codian
-
-> 旧项目名称 / Former project name: **obsidian-codex-memory**
+# Obsidian Codex Memory
 
 ## Dependencies
 
