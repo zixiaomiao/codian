@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_URL="${CODIA_REPO:-https://github.com/zixiaomiao/codian.git}"
-PLUGIN_NAME="codin"
+PLUGIN_NAME="Codian"
 CODEX_HOME="${CODEX_HOME:-$HOME/.codex}"
 SKILL_DIR="${CODIA_SKILL_DIR:-$CODEX_HOME/skills/$PLUGIN_NAME}"
 GITHUB_DIR="${CODIA_GITHUB_DIR:-$CODEX_HOME/skills/${PLUGIN_NAME} GitHub}"
@@ -24,7 +24,7 @@ mkdir -p "$(dirname "$SKILL_DIR")"
 if [ -d "$GITHUB_DIR/.git" ]; then
   git -C "$GITHUB_DIR" pull --ff-only
 elif [ -d "$GITHUB_DIR" ]; then
-  echo "Refreshing existing Codin GitHub directory: $GITHUB_DIR"
+  echo "Refreshing existing Codian GitHub directory: $GITHUB_DIR"
   rm -rf "$GITHUB_DIR"
   git clone "$REPO_URL" "$GITHUB_DIR"
 else
@@ -118,5 +118,5 @@ GitHub copy:
 Next, configure your Obsidian vault if you have not already:
   python3 "$SKILL_DIR/scripts/obsidian_memory.py" init --vault "/path/to/your/Obsidian vault"
 
-Then enable "Codin" in Codex.
+Then enable "Codian" in Codex.
 EOF

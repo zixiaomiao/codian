@@ -1,7 +1,7 @@
 $ErrorActionPreference = "Stop"
 
 $RepoUrl = if ($env:CODIA_REPO) { $env:CODIA_REPO } else { "https://github.com/zixiaomiao/codian.git" }
-$PluginName = "codin"
+$PluginName = "Codian"
 $CodexHome = if ($env:CODEX_HOME) { $env:CODEX_HOME } else { Join-Path $env:USERPROFILE ".codex" }
 $SkillDir = if ($env:CODIA_SKILL_DIR) { $env:CODIA_SKILL_DIR } else { Join-Path $CodexHome "skills\$PluginName" }
 $GithubDir = if ($env:CODIA_GITHUB_DIR) { $env:CODIA_GITHUB_DIR } else { Join-Path $CodexHome "skills\$PluginName GitHub" }
@@ -106,4 +106,4 @@ Write-Host ""
 Write-Host "Next, configure your Obsidian vault if you have not already:"
 Write-Host "  python `"$SkillDir\scripts\obsidian_memory.py`" init --vault `"D:\path\to\your\Obsidian vault`""
 Write-Host ""
-Write-Host "Then enable `"Codin`" in Codex."
+Write-Host "Then enable `"Codian`" in Codex."

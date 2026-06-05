@@ -2,7 +2,7 @@
 setlocal
 
 set "REPO_URL=https://github.com/zixiaomiao/codian.git"
-set "PLUGIN_NAME=codin"
+set "PLUGIN_NAME=Codian"
 set "CODEX_HOME=%USERPROFILE%\.codex"
 set "SKILL_DIR=%CODEX_HOME%\skills\%PLUGIN_NAME%"
 set "GITHUB_DIR=%CODEX_HOME%\skills\%PLUGIN_NAME% GitHub"
@@ -63,12 +63,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
   "Write-Host \"Registered $pluginName in $marketplacePath\""
 
 echo.
-echo Installed Codin.
+echo Installed Codian.
 echo Skill path: %SKILL_DIR%
 echo GitHub copy: %GITHUB_DIR%
 echo.
 echo Next step:
-echo   Open Codex, enable Codin, then configure your Obsidian vault if needed.
+echo   Open Codex, enable Codian, then configure your Obsidian vault if needed.
 echo.
 echo Optional vault config command:
 echo   python "%SKILL_DIR%\scripts\obsidian_memory.py" init --vault "D:\path\to\your\Obsidian vault"
