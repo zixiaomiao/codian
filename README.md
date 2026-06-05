@@ -36,7 +36,7 @@ codian/
   90-Archive-归档/
 ```
 
-插件第一次初始化会在 Obsidian vault 根目录创建 `codian/`，后续所有 Codian 记忆文件都写入这个目录。
+如果 vault 位于 iCloud Obsidian 容器中，插件第一次初始化会在该容器的 `Documents` 根目录创建 `codian/`，后续所有 Codian 记忆文件都写入这个独立目录，而不是放进某个子 vault 里。
 
 ## 功能
 

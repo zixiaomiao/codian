@@ -27,7 +27,9 @@ Or reference by relative path from the skill directory:
 The vault path is resolved in this order (tiered fallback):
 1. `OBSIDIAN_VAULT` environment variable
 2. `~/.config/codian/config.json` — `{"vault": "/path/to/vault"}`
-3. Auto-discovery: scans common paths for `.obsidian/` directories, prefers the one with `codian/AGENTS.md` + `codian/30-Logs-日志/codex-session-summary.md`
+3. Auto-discovery: scans common paths for `.obsidian/` directories, prefers the iCloud Documents root or a vault that already has `codian/AGENTS.md` + `codian/30-Logs-日志/codex-session-summary.md`
+
+When the vault lives inside the iCloud Obsidian container, `codian/` is created at the container's `Documents` root so it stays independent from nested vaults like `Codex/`.
 
 ## Workflow
 

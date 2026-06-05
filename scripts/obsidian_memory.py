@@ -12,6 +12,7 @@ from typing import List, Optional
 
 APP_NAME = "codian"
 MEMORY_ROOT_REL = Path("codian")
+ICLOUD_OBSIDIAN_ROOT = Path.home() / "Library/Mobile Documents/iCloud~md~obsidian/Documents"
 DEFAULT_MEMORY_REL = MEMORY_ROOT_REL / "30-Logs-日志/codex-session-summary.md"
 DEFAULT_PROJECT_SUMMARY_REL = MEMORY_ROOT_REL / "10-Context-上下文/project-summary.md"
 DEFAULT_ENTRY_RELS = [MEMORY_ROOT_REL / "README.md", MEMORY_ROOT_REL / "AGENTS.md"]
@@ -70,6 +71,21 @@ def looks_like_vault(path: Path) -> bool:
     return path.exists() and (path / ".obsidian").exists()
 
 
+def canonical_vault_root(path: Path) -> Path:
+    expanded = path.expanduser()
+    try:
+        resolved = expanded.resolve()
+    except FileNotFoundError:
+        resolved = expanded
+    try:
+        if resolved == ICLOUD_OBSIDIAN_ROOT or resolved.is_relative_to(ICLOUD_OBSIDIAN_ROOT):
+            return ICLOUD_OBSIDIAN_ROOT
+    except AttributeError:
+        if str(resolved).startswith(str(ICLOUD_OBSIDIAN_ROOT)):
+            return ICLOUD_OBSIDIAN_ROOT
+    return resolved
+
+
 def discover_vault() -> Optional[Path]:
     vaults = []
     for root in candidate_vaults():
@@ -82,21 +98,21 @@ def discover_vault() -> Optional[Path]:
 
     for vault in vaults:
         if (vault / MEMORY_ROOT_REL / "AGENTS.md").exists() and (vault / DEFAULT_MEMORY_REL).exists():
-            return vault
+            return canonical_vault_root(vault)
     for vault in vaults:
         if (vault / DEFAULT_MEMORY_REL).exists():
-            return vault
-    return vaults[0] if vaults else None
+            return canonical_vault_root(vault)
+    return canonical_vault_root(vaults[0]) if vaults else None
 
 
 def vault_path() -> Path:
     if os.environ.get("OBSIDIAN_VAULT"):
-        return Path(os.environ["OBSIDIAN_VAULT"]).expanduser()
+        return canonical_vault_root(Path(os.environ["OBSIDIAN_VAULT"]))
 
     config = load_config()
     configured = config.get("vault")
     if configured:
-        return Path(configured).expanduser()
+        return canonical_vault_root(Path(configured))
 
     discovered = discover_vault()
     if discovered:
@@ -611,7 +627,7 @@ source: `{source_path.relative_to(vault_path())}`
 
 
 def init(vault: str, memory: Optional[str], create: bool) -> None:
-    vault_dir = Path(vault).expanduser().resolve()
+    vault_dir = canonical_vault_root(Path(vault))
     if not vault_dir.exists():
         raise SystemExit(f"Vault path does not exist: {vault_dir}")
 
