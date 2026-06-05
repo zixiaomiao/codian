@@ -36,7 +36,7 @@ codian/
   90-Archive-归档/
 ```
 
-If the vault lives inside the iCloud Obsidian container, first init creates `codian/` at the container's `Documents` root. All later Codian memory files are written under that independent directory, not inside a nested vault.
+On first use, the plugin asks the user for the Obsidian vault path and saves the choice locally. If the selected path is inside the iCloud Obsidian container, the plugin normalizes it to the container `Documents` root and creates `Codian Memory/` there. All later Codian memory files are written under that independent directory, not inside a nested vault.
 
 ## Features
 
