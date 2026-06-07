@@ -1,6 +1,6 @@
 # Codian
 
-把 Obsidian 变成 Codex 的长期记忆。
+把 Obsidian 变成 AI Agent 的长期记忆（支持 Codex / Hermes）。
 
 ## 解决什么
 
@@ -13,16 +13,26 @@
 
 ## 一行安装
 
-macOS / Linux：
+### Codex
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/zixiaomiao/codian/main/install.sh | bash
 ```
 
-Windows PowerShell：
+### Hermes
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/zixiaomiao/codian/main/install.sh | bash -s hermes
+```
+
+### Windows PowerShell
 
 ```powershell
+# Codex
 irm https://raw.githubusercontent.com/zixiaomiao/codian/main/install.ps1 | iex
+
+# Hermes
+irm https://raw.githubusercontent.com/zixiaomiao/codian/main/install.ps1 | iex -Args 'hermes'
 ```
 
 ## 第一次用

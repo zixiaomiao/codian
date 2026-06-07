@@ -2,23 +2,45 @@
 set -euo pipefail
 
 # ──────────────────────────────────────────────
-# Codian — Codex + Obsidian 长期记忆插件安装脚本
+# Codian — 多 Agent 长期记忆插件安装脚本
+# 支持: codex, hermes
 # macOS / Linux
 # ──────────────────────────────────────────────
 
 REPO="zixiaomiao/codian"
 BRANCH="main"
 GITHUB="https://github.com/$REPO.git"
+TARGET="${1:-codex}"  # 默认 codex，支持 codex | hermes
 
-SKILLS_DIR="$HOME/.codex/skills"
-CODIAN_DIR="$SKILLS_DIR/Codian"
-MARKETPLACE_FILE="$HOME/.agents/plugins/marketplace.json"
+case "$TARGET" in
+  codex)
+    SKILLS_DIR="$HOME/.codex/skills"
+    CODIAN_DIR="$SKILLS_DIR/Codian"
+    MARKETPLACE_FILE="$HOME/.agents/plugins/marketplace.json"
+    SRC_SUBDIR="Codian"  # 从仓库 Codian/ 目录复制
+    ;;
+  hermes)
+    SKILLS_DIR="$HOME/.hermes/skills"
+    CODIAN_DIR="$SKILLS_DIR/codian"
+    MARKETPLACE_FILE=""
+    SRC_SUBDIR="hermes"  # 从仓库 hermes/ 目录复制
+    ;;
+  *)
+    echo "❌ 不支持的 Agent: $TARGET"
+    echo "   用法: curl -fsSL ... | bash -s codex"
+    echo "        curl -fsSL ... | bash -s hermes"
+    exit 1
+    ;;
+esac
 
-# ── 2. 确保目标目录存在 ─────────────────────
+echo "→ 安装目标: $TARGET"
+echo "→ 目标目录: $CODIAN_DIR"
+
+# ── 确保目标目录存在 ─────────────────────
 mkdir -p "$CODIAN_DIR"
 
-# ── 3. 从 GitHub 下载并同步插件到 skills/Codian ─────────
-echo "→ 从 GitHub 下载并同步插件到 $CODIAN_DIR"
+# ── 从 GitHub 下载并同步 ─────────
+echo "→ 从 GitHub 下载并同步..."
 TMP_DIR=$(mktemp -d)
 git clone --depth 1 --branch "$BRANCH" "$GITHUB" "$TMP_DIR"
 rsync -a --delete \
@@ -26,14 +48,15 @@ rsync -a --delete \
     --exclude='__pycache__' \
     --exclude='*.pyc' \
     --exclude='.DS_Store' \
-    "$TMP_DIR/Codian/" "$CODIAN_DIR/"
+    "$TMP_DIR/$SRC_SUBDIR/" "$CODIAN_DIR/"
 rm -rf "$TMP_DIR"
 
-# ── 4. 注册到 Codex 个人插件市场 ─────────────
-mkdir -p "$(dirname "$MARKETPLACE_FILE")"
+# ── 注册到 Codex 个人插件市场（仅 codex 模式）──
+if [[ "$TARGET" == "codex" ]]; then
+    mkdir -p "$(dirname "$MARKETPLACE_FILE")"
 
-if [[ ! -f "$MARKETPLACE_FILE" ]]; then
-    cat > "$MARKETPLACE_FILE" << 'JSONEOF'
+    if [[ ! -f "$MARKETPLACE_FILE" ]]; then
+        cat > "$MARKETPLACE_FILE" << 'JSONEOF'
 {
   "name": "personal",
   "interface": {
@@ -42,12 +65,11 @@ if [[ ! -f "$MARKETPLACE_FILE" ]]; then
   "plugins": []
 }
 JSONEOF
-fi
+    fi
 
-# 插件注册信息
-PLUGIN_PATH="$(cd "$CODIAN_DIR" && pwd)"
+    PLUGIN_PATH="$(cd "$CODIAN_DIR" && pwd)"
 
-python3 - "$PLUGIN_PATH" "$MARKETPLACE_FILE" << 'PYEOF'
+    python3 - "$PLUGIN_PATH" "$MARKETPLACE_FILE" << 'PYEOF'
 import json, sys
 
 plugin_path = sys.argv[1]
@@ -87,9 +109,12 @@ data["plugins"] = plugins
 with open(marketplace_file, "w") as f:
     json.dump(data, f, indent=2)
 PYEOF
+elif [[ "$TARGET" == "hermes" ]]; then
+    echo "→ Skill 已安装到 Hermes，在 Hermes 中运行 /skill codian 或 hermes -s codian 加载"
+fi
 
 echo ""
-echo "✅ Codian 安装完成！"
+echo "✅ Codian ($TARGET) 安装完成！"
 echo ""
 echo "   插件目录: $CODIAN_DIR"
 echo "   脚本路径: $CODIAN_DIR/scripts/obsidian_memory.py"
@@ -99,3 +124,4 @@ echo "   python3 $CODIAN_DIR/scripts/obsidian_memory.py init --vault \"/path/to/
 echo ""
 echo "   或设置环境变量:"
 echo "   export OBSIDIAN_VAULT=\"/path/to/your/Obsidian vault\""
+echo ""
